@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated Premier League API data (refresh locally; no bundled dataset)
+data/cache/
+data/*.sqlite3*

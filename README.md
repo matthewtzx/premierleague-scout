@@ -1,257 +1,239 @@
 # Premier League Scout
 
-An interactive football scouting dashboard that helps you find Premier League
-players whose statistics match specific tactical roles. Built with Python and
-Streamlit, it turns player statistics into per-90 metrics, percentile rankings,
-and weighted scouting scores.
+Explore the Premier League careers of players in current PL squads, find players
+with similar statistical styles, and rank players against ten tactical archetypes.
+Built with Python, Streamlit, pandas and Plotly.
 
-Use it to build a shortlist, explore a player's statistical strengths, or compare
-how players rank under different role definitions. For example, you can look for
-a creative midfielder using passing and chance-creation metrics, then switch to
-a ball-winning midfielder to focus on defensive contributions.
+The dataset comes from the JSON API used by the
+[official Premier League statistics site](https://www.premierleague.com/en/stats).
+The old bundled CSV has been removed. The app stores a refreshable SQLite snapshot
+locally and works offline after the first successful import.
 
-## Features
+## Run locally
 
-- **10 tactical roles across four positions:** goalkeepers, defenders,
-  midfielders, and forwards.
-- **Scouting filters:** set a minimum playing-time threshold and narrow results
-  by club and nationality.
-- **Ranked recommendations:** display up to 5–30 players, with rank, club,
-  nationality, minutes, and a scouting score out of 100.
-- **Player profiles:** inspect a player's club, position, score, and individual
-  role metrics.
-- **Statistical breakdowns:** view raw totals, per-90 values, percentile progress
-  bars, and an interactive Plotly chart.
-- **Missing-metric handling:** see which role metrics are unavailable and receive
-  a score based on the remaining metrics.
-
-The app reads a local CSV. It does not fetch live results, update player data
-automatically, or require an API key.
-
-## Getting started
-
-You need Python with `pip` and the project files, including
-[`data/players.csv`](data/players.csv). The app has been checked locally with
-Python 3.9.6 and Streamlit 1.50.0. Direct dependencies are pinned to the versions
-tested locally; transitive dependencies are resolved by pip.
-
-From the project directory, create and activate a virtual environment:
+Python 3.9 or later is required; dependencies remain pinned to the versions used
+by this project.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-On Windows PowerShell, use these commands instead:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-Install the dependencies and start the dashboard:
-
-```bash
 python -m pip install -r requirements.txt
+python -m scripts.refresh_data
 python -m streamlit run app.py
 ```
 
-Open the local URL printed in the terminal. Keep the terminal running while using
-the app, and press `Ctrl+C` to stop it.
+On Windows, activate with `.venv\Scripts\activate` instead. You can also start
+Streamlit before importing and press **Load Premier League data**. The initial
+import makes several hundred requests and may take several minutes, depending
+on the source. Progress is displayed throughout. No API key is required by the
+endpoints used here.
 
-For later sessions, activate the existing virtual environment and run the same
-Streamlit command; you do not need to recreate the environment.
+## Explore players
 
-## Using the dashboard
+1. Choose **Search for a player**, then type a name in the player selector, or
+   choose **Filter by club**, pick a club, and select a player.
+2. View career appearances, minutes, goals and assists. Expand the full career
+   or season-by-season tables for the other statistics.
+3. See the closest statistical matches among current players at the same broad
+   position. Choose a match for side-by-side totals, per-90 values and an
+   interactive percentile chart.
+4. Adjust minimum career PL minutes or the number of matches displayed. Players
+   with no PL minutes still have profiles but cannot receive a similarity score.
 
-1. **Set minimum minutes.** The default is 900, with a slider from 0 to 3,000.
-   Players with zero or negative minutes are always excluded.
-2. **Choose a position and role.** The available roles change with the position.
-3. **Optionally select clubs and nationalities.** Leave either filter empty to
-   include all values. Multiple selections within a filter are alternatives;
-   when both filters are set, players must satisfy both.
-4. **Choose the number of recommendations.** The default is 10. Fewer rows appear
-   if fewer players match your filters.
-5. **Explore a player profile.** The player selector includes all matching
-   players, even those outside the displayed recommendation limit.
+Player IDs identify records and selections, so duplicate names and transfers do
+not combine different people. Career totals include previous Premier League
+clubs. The club shown beside a player comes from the current squad snapshot.
 
-If no players match, the app displays a message. Lower the minutes threshold or
-broaden the club and nationality filters to see more results.
+## Player Archetypes
 
-## Available roles
+Press **Player Archetypes** to enter the role-scoring interface. Select a position,
+archetype and minimum minutes, then optionally filter by club and nationality.
+Use **View career and similar players** to return to that player's main profile.
 
-The exact metrics and weights are defined in [`src/roles.py`](src/roles.py).
+All ten original archetypes are retained. Their weights now refer to metrics
+available in the Premier League feed:
 
-| Position | Role | Statistical focus |
+| Position | Archetype | Statistical emphasis |
 | --- | --- | --- |
-| Goalkeeper (`GKP`) | Shot Stopper | Saves, save percentage, clean sheets, punches |
-| Goalkeeper (`GKP`) | Sweeper Keeper | Sweeping, passing, save percentage, high claims |
-| Defender (`DEF`) | Ball-Playing Defender | Passing, final-third passes, interceptions, possession won, progressive carries |
-| Defender (`DEF`) | Defensive Stopper | Tackles, interceptions, clearances, blocks, duels won |
-| Midfielder (`MID`) | Box-to-Box Midfielder | Progressive carries, possession won, tackles, final-third passes, interceptions |
-| Midfielder (`MID`) | Ball-Winning Midfielder | Tackles, interceptions, possession won, duels won |
-| Midfielder (`MID`) | Creative Midfielder | Assists, through balls, final-third passes, progressive carries, successful crosses |
-| Midfielder (`MID`) | Deep-Lying Playmaker | Passing volume and completion, final-third passes, through balls, progressive carries |
-| Forward (`FWD`) | Goalscorer | Goals, shots on target, shots, box touches, ground duels won |
-| Forward (`FWD`) | Creative Forward | Assists, through balls, final-third passes, progressive carries, successful crosses |
+| Goalkeeper | Shot Stopper | Saves, derived save rate, clean sheets per 90, catches |
+| Goalkeeper | Sweeper Keeper | Passing, completion, long passes, recoveries, touches |
+| Defender | Ball-Playing Defender | Passing, forward distribution, long passes, recoveries, dribbling |
+| Defender | Defensive Stopper | Tackles, interceptions, clearances, blocks, ground and aerial duels won |
+| Midfielder | Box-to-Box Midfielder | Dribbling, recoveries, tackles, box touches, key passes, interceptions |
+| Midfielder | Ball-Winning Midfielder | Tackles, interceptions, recoveries, duels won |
+| Midfielder | Creative Midfielder | Assists, through balls, key passes, dribbling, open-play crosses |
+| Midfielder | Deep-Lying Playmaker | Passing volume and completion, forward passes, through balls, long passes |
+| Forward | Goalscorer | Goals, shots on target, shots, box touches, ground duels won |
+| Forward | Creative Forward | Assists, through balls, key passes, dribbling, open-play crosses |
 
-Sweeping and box touches are part of the configured role definitions but are
-absent from the bundled dataset. See the missing-data behavior below.
+The **Sweeper Keeper** score is a distribution-and-involvement proxy. The feed
+does not provide a reliable sweeping-action metric. Successful dribbles also do
+not mean progressive carries, and forward passes do not mean final-third passes.
+These substitutions are named explicitly in the interface and definitions.
 
-## How scoring works
+Weights and positional style features live in [`src/roles.py`](src/roles.py).
+The interface exposes each archetype's effective weights.
 
-### 1. Establish the comparison group
+## Data source and coverage
 
-The app first selects players who meet the minutes threshold and play the chosen
-position. Each player's statistics are ranked against this group.
+Only Premier League competition `8` is imported, starting with **2006/07**.
+Earlier statistics, other domestic leagues, cups and European competitions are
+excluded. The app detects the active PL season from the official statistics page
+and reads the competition's season catalogue, rather than guessing IDs from
+calendar years: for example, 2006/07 has API season ID `7`.
 
-Club and nationality filters are applied **after scoring**. Selecting one club
-therefore keeps the broader positional benchmark. Changing the minutes threshold
-changes the comparison group and can change scores.
-
-### 2. Calculate per-90 statistics
-
-Counting statistics in the app's `stats` list are converted using:
-
-```text
-Statistic per 90 = statistic total / minutes played × 90
-```
-
-For example, five assists in 900 minutes becomes 0.5 assists per 90.
-Percentage columns such as `Saves %` are converted from strings like `75%` to
-numeric values. Metrics configured as percentages or raw totals retain those
-units; clean sheets currently use the raw total.
-
-### 3. Rank each role metric
-
-For each metric, the app uses pandas' `rank(pct=True) × 100`. Higher values receive
-higher ranks, and tied values share their average rank. These are relative ranks
-within the selected comparison group, rather than fixed performance targets.
-
-### 4. Combine the percentiles
+The API base currently used by the website is:
 
 ```text
-Scouting score = sum(metric percentile × metric weight)
+https://sdp-prem-prod.premier-league-prod.pulselive.com/api
 ```
 
-For example, the Creative Midfielder role uses:
+The importer uses these website endpoints:
 
-| Metric | Weight |
-| --- | ---: |
-| Assists per 90 | 20% |
-| Through Balls per 90 | 25% |
-| fThird Passes per 90 | 25% |
-| Progressive Carries per 90 | 20% |
-| Successful Crosses per 90 | 10% |
-
-The recommendation table sorts scores from highest to lowest and displays one
-decimal place. A score of 85 is a weighted average of metric percentiles; it does
-not mean the player is in the 85th percentile of the final score distribution or
-has an 85% probability of succeeding in that role.
-
-### Missing role metrics
-
-If a configured metric is absent, the app shows a notice, excludes that metric,
-and rescales the remaining weights to total 100%. It does not invent values for
-missing statistics. If no metrics remain, it stops with a message.
-
-In the bundled CSV:
-
-- `High Claims` is the goalkeeper claims column.
-- `Keeper Sweeper` is missing, so Sweeper Keeper scores use the other four metrics.
-- `Touches Box` is missing, so Goalscorer scores use the other four metrics.
-
-For example, removing the Sweeper Keeper metric with a 30% weight leaves 70% of
-the original weights. Each remaining weight is divided by 0.70. This keeps the
-score on the same scale, but changes what the score measures.
-
-## Dataset requirements
-
-The dashboard loads [`data/players.csv`](data/players.csv) relative to `app.py`.
-To use a replacement dataset, preserve the expected column names and units.
-
-| Purpose | Columns |
+| Endpoint | Purpose |
 | --- | --- |
-| Identity and filters | `Player Name`, `Club`, `Nationality`, `Position` |
-| Playing time | `Appearances`, `Minutes` |
-| Profile statistics | `Goals`, `Assists`, `Passes`, `Progressive Carries`, `Tackles`, `Interceptions` |
-| Role scoring | Additional metrics referenced by `PLAYER_ROLES`, such as `Saves %`, `Through Balls`, and `gDuels Won` |
+| `/v2/competitions/8/details` | Season labels and IDs |
+| `/v1/competitions/8/seasons/{season}/teams` | Active-season clubs |
+| `/v2/competitions/8/seasons/{season}/teams/{team}/squad` | Current squad membership |
+| `/v3/competitions/8/seasons/{season}/players/stats/leaderboard` | Player-season totals, across all clubs |
+| `/v1/players/{player}/career` | Check each current player's PL season coverage |
+| `/v2/competitions/8/seasons/{season}/players/{player}/stats` | Recover a season missing from the leaderboard |
+| `/v1/players/{player}/basic` | Resolve overlapping squads during transfers |
 
-Use `GKP`, `DEF`, `MID`, or `FWD` for positions. Counting statistics should contain
-numeric totals for a consistent reporting period. Percentage columns may contain
-values such as `75%`; the app strips the trailing percent sign before conversion.
-Keep player names unique because the profile selector identifies players by name.
+List requests follow `_next` pagination until completion. The importer checks
+that there are 20 distinct clubs and no gaps in the covered season catalogue.
+Some historical leaderboard records have missing player identities; each current
+player’s career history is checked, and missing seasons are requested individually.
+Unidentified source-row counts and season metric coverage are recorded in snapshot
+metadata. Raw values are retained alongside normalized player-season values.
 
-Missing-role handling does not replace general CSV validation: required identity
-and profile columns must still exist, and values should be complete and valid.
-The app does not verify the dataset's source, season, or accuracy.
+If the official career summary records a played season but the detailed feed
+still has no playing-time record, the summary supplies basic totals. Detailed
+metrics for that season remain unavailable, and the player profile shows a
+coverage notice. They are not replaced by zero or estimates.
+
+The source's squads define “current players”; squad changes are only reflected
+after a refresh and depend on the provider updating its records. This is a website
+API, not a versioned service contract for this application. If its response format
+or availability changes, the importer may need updating.
+
+### Missing statistics and units
+
+The source uses sparse event counts. As in the site's presentation, an omitted
+player count is treated as zero **only if that metric exists elsewhere in the
+same season's feed**. A metric absent across an entire season, or explicitly null,
+is unavailable. If a player has an unavailable metric in a season they played,
+the corresponding career total is unavailable instead of a partial total labeled
+as a complete career total.
+
+All counting-statistic per-90 values use summed career totals divided by summed
+career minutes, multiplied by 90. Rates are calculated from summed components,
+not averaged season percentages:
+
+- Pass completion: `(total passes − unsuccessful passes) / total passes × 100`.
+- Long-pass completion: `successful long passes / long passes × 100`.
+- Save Rate: `saves / (saves + goals conceded) × 100`, for goalkeepers only. This
+  is an app-derived rate, not a claim to reproduce an official save percentage.
+
+Crosses refer to open-play crosses. Recoveries, catches and shots on target map
+to `recoveries`, `catches` and `shotsOnTargetIncGoals` respectively. The full mapping
+is in [`src/metrics.py`](src/metrics.py). The app intentionally does not use xG/xA
+for career similarity because their coverage differs from the core event metrics.
+
+## How comparisons work
+
+Similarity and archetype scores answer different questions.
+
+**Style similarity** compares per-90 activity and selected rates within the same
+broad position (`GKP`, `DEF`, `MID`, `FWD`):
+
+```text
+metric percentile = average-tie positional rank / cohort size × 100
+style similarity = 100 − mean absolute percentile gap from the chosen player
+```
+
+Every candidate uses the same features with equal weight. The chosen player and
+candidates must meet the minutes threshold (default 900). Unavailable target
+features and constant features are omitted with a notice; candidates missing a
+remaining feature are excluded. At least four varying features and three players
+are required. The chosen player is excluded from the results. Ties use career
+minutes and stable source order. A similarity index of 90 is not a 90% probability
+that two players play identically.
+
+**Archetype scores** are weighted averages of metric percentiles among eligible
+players at that position. Higher values are preferred for each configured metric.
+A metric unavailable to the whole cohort is omitted and remaining weights are
+normalized. Players missing any remaining metric are not ranked. Club and
+nationality filters apply after scoring, preserving the wider positional benchmark.
+
+Neither calculation trains a predictive model. Broad position labels can group
+players with different tactical jobs. Career averages hide role changes; per-90
+rates do not adjust for team possession, opposition, age, tactics or match context.
+These comparisons are starting points for further scouting.
+
+## Refresh and persistence
+
+Use the sidebar's **Refresh Premier League data** button or run:
+
+```bash
+python -m scripts.refresh_data
+```
+
+Squad and club responses are cached for one hour, current-season statistics and
+career histories for one day, and historical statistics for 30 days. Force every
+response to be downloaded again with:
+
+```bash
+python -m scripts.refresh_data --force
+```
+
+Raw responses are cached under `data/cache/`; the complete dataset is saved to
+`data/premier_league.sqlite3`. Both are ignored by Git. A refresh validates and
+builds a complete snapshot before replacing the previous data in a single database
+transaction. Network or validation failure keeps the previous snapshot intact.
+Interrupted imports can reuse successful cached responses when retried. There is
+no automatic background scheduler; run the CLI periodically or refresh manually.
+The app shows the last successful refresh time and warns after a week.
+
+Requests have timeouts, pacing and bounded retries for network failures, HTTP 429
+and server errors. HTTP 403 is surfaced as an error. The application does not
+attempt to bypass access controls.
+
+## Checks
+
+```bash
+python -m unittest discover -s tests -v
+python -m pip check
+```
+
+Tests cover season filtering and IDs, pagination, coverage reconciliation, snapshot
+rollback, career aggregation, missing statistics, zero minutes, similarity cohorts,
+role scoring and the Streamlit navigation flows. Test fixtures are synthetic and
+are never used as application data.
 
 ## Project structure
 
 ```text
-premierleague-scout/
-├── app.py              # Dashboard, data preparation, filters, and visualizations
-├── data/
-│   └── players.csv     # Local player statistics
-├── src/
-│   ├── roles.py        # Position-specific role metrics and weights
-│   └── scouting.py     # Per-90 calculations and weighted percentile scoring
-├── requirements.txt    # Python dependencies
-├── README.md
-└── LICENSE
+app.py                    Player search, comparisons and archetype interface
+src/pl_api.py             Premier League API client, pagination, caching
+src/dataset.py            Import validation, snapshots and career aggregation
+src/metrics.py            Source field mappings and units
+src/scouting.py           Career rates, similarity and archetype calculations
+src/roles.py              Ten archetypes and positional style metrics
+scripts/refresh_data.py   Command-line data refresh
+tests/                    Data, scoring and interface checks
+data/                     Generated database and response cache
 ```
 
-Streamlit provides the interface, pandas handles data processing, and Plotly
-renders the percentile chart.
+## Troubleshooting
 
-## Customizing the scouting model
-
-Edit `PLAYER_ROLES` in [`src/roles.py`](src/roles.py) to add a role or change its
-weights. Use nonnegative weights that sum to `1.0`; complete role definitions
-are used as written without automatic normalization.
-
-For a new per-90 metric, add its raw column to the CSV and to the `stats` list in
-[`app.py`](app.py), then reference it as `Column Name per 90` in the role.
-Percentage or total metrics can be referenced by their existing column names.
-
-The current ranking logic always treats a higher value as better. Metrics where
-lower is preferable, such as errors or goals conceded, require a change to the
-ranking logic before they can be used meaningfully.
-
-## Checks and troubleshooting
-
-To check installed dependency compatibility, run:
-
-```bash
-python -m pip check
-```
-
-| Symptom | What to check |
+| Symptom | Action |
 | --- | --- |
-| `streamlit: command not found` | Activate `.venv`, install the requirements, and use `python -m streamlit run app.py`. |
-| `ModuleNotFoundError` | Install requirements with the same Python interpreter used to launch the app. |
-| CSV file not found | Confirm `data/players.csv` exists alongside the project files. |
-| `KeyError` after replacing the CSV | Check exact column names, including capitalization and spaces, against the dataset requirements. |
-| Numeric conversion error | Check numeric and percentage columns for invalid text or inconsistent values. |
-| No matching players | Broaden filters or lower the minutes threshold. |
-| Missing-statistics notice | Supply the missing columns or interpret the score using the available metrics listed in the role. |
+| No snapshot exists | Use **Load Premier League data** or the refresh CLI. |
+| Refresh fails | Check network access and the displayed source error. Retry; the prior snapshot remains usable. |
+| Data seems old | Check the refresh time and cache intervals; use `--force` when needed. |
+| No similar players | Lower the minutes threshold or select a player with more PL history. |
+| Unavailable career statistic | At least one played season lacks that metric; the app avoids presenting partial totals. |
+| No archetype recommendations | Broaden filters, lower minimum minutes, or inspect missing-metric notices. |
 
-## Interpretation and limitations
-
-The model provides a transparent statistical shortlist. Its weights are manually
-defined, and it does not train a machine-learning model or predict future
-performance. Scores should support further scouting and video analysis.
-
-Per-90 normalization reduces playing-time differences but does not adjust for
-team possession, tactical system, opposition strength, age, injuries, or match
-context. Small samples can produce extreme rates, and raw clean-sheet totals
-remain sensitive to playing time. A higher minutes threshold can improve sample
-size, while also changing the comparison group.
-
-Scores from different roles, datasets, or minutes thresholds are not directly
-equivalent. Missing metrics can also weaken how well a score represents its
-named role, especially when the absent metric describes a defining behavior.
-
-## License
-
-See [`LICENSE`](LICENSE) for the project license.
+See [`LICENSE`](LICENSE) for the code license.

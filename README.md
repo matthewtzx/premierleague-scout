@@ -6,8 +6,8 @@ Built with Python, Streamlit, pandas and Plotly.
 
 The dataset comes from the JSON API used by the
 [official Premier League statistics site](https://www.premierleague.com/en/stats).
-The old bundled CSV has been removed. The app stores a refreshable SQLite snapshot
-locally and works offline after the first successful import.
+The app stores a refreshable SQLite snapshot locally and works offline after the 
+first successful import.
 
 ## Run locally
 
@@ -35,8 +35,11 @@ endpoints used here.
 2. View career appearances, minutes, goals and assists. Expand the full career
    or season-by-season tables for the other statistics.
 3. See the closest statistical matches among current players at the same broad
-   position. Choose a match for side-by-side totals, per-90 values and an
-   interactive percentile chart.
+   position. Choose a match for a side-by-side table and an interactive
+   percentile chart. The table begins with appearances, minutes, goals,
+   goals per 90, assists and assists per 90; the higher available value in each
+   row is shaded light green. It then lists the usable style metrics. The chart
+   uses those style metrics in the same top-to-bottom order as the table.
 4. Adjust minimum career PL minutes or the number of matches displayed. Players
    with no PL minutes still have profiles but cannot receive a similarity score.
 
@@ -48,7 +51,9 @@ clubs. The club shown beside a player comes from the current squad snapshot.
 
 Press **Player Archetypes** to enter the role-scoring interface. Select a position,
 archetype and minimum minutes, then optionally filter by club and nationality.
-Use **View career and similar players** to return to that player's main profile.
+Choose how many recommendations to show, then use the player explorer below the
+recommendations table. **View career and similar players** returns to that
+player's main profile.
 
 All ten original archetypes are retained. Their weights now refer to metrics
 available in the Premier League feed:
@@ -159,6 +164,19 @@ remaining feature are excluded. At least four varying features and three players
 are required. The chosen player is excluded from the results. Ties use career
 minutes and stable source order. A similarity index of 90 is not a 90% probability
 that two players play identically.
+
+The configured style metrics are shown below. These are candidates for similarity
+and the comparison chart; a metric can still be omitted for unavailable or
+constant data. Goals per 90 and assists per 90 are present in the comparison
+table for every position, but are chart metrics only for defenders, midfielders
+and forwards.
+
+| Position | Configured style metrics |
+| --- | --- |
+| Goalkeeper | Passes/90, Long Passes/90, Pass Completion %, Touches/90, Recoveries/90, Saves/90, Catches/90, Punches/90 |
+| Defender | Passes/90, Forward Passes/90, Long Passes/90, Successful Crosses/90, Successful Dribbles/90, Goals/90, Assists/90, Tackles/90, Interceptions/90, Clearances/90, Aerial Duels Won/90, Touches in Box/90, Recoveries/90 |
+| Midfielder | Passes/90, Key Passes/90, Forward Passes/90, Long Passes/90, Successful Crosses/90, Successful Dribbles/90, Shots/90, Goals/90, Assists/90, Touches in Box/90, Tackles/90, Recoveries/90 |
+| Forward | Goals/90, Assists/90, Shots/90, Touches in Box/90, Successful Crosses/90, Successful Dribbles/90, Passes/90, Key Passes/90, Aerial Duels Won/90, Recoveries/90 |
 
 **Archetype scores** are weighted averages of metric percentiles among eligible
 players at that position. Higher values are preferred for each configured metric.

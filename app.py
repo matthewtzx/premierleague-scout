@@ -24,6 +24,11 @@ CHART_CONFIG = {
     ],
 }
 
+COMPARISON_CORE_METRICS = [
+    "Appearances", "Minutes", "Goals", "Goals per 90", "Assists", "Assists per 90",
+]
+HIGHER_STAT_HIGHLIGHT = "background-color: rgba(144, 238, 144, 0.5)"
+
 
 @st.cache_data(show_spinner=False)
 def read_players(revision):
@@ -120,18 +125,41 @@ def comparisons(players, player_id):
     other = players.loc[players["Player ID"] == chosen].iloc[0]
     target_label = f"{target['Player Name']} (#{player_id})"
     other_label = f"{other['Player Name']} (#{chosen})"
-    raw = [{"Metric": metric,
-            target_label: format_stat(target[metric], metric),
-            other_label: format_stat(other[metric], metric)}
-           for metric in ["Appearances", "Minutes", "Goals", "Assists", *features]]
-    st.dataframe(pd.DataFrame(raw), hide_index=True, width="stretch")
-    chart_rows = [{"Metric": metric, "Player": name,
-                   "Positional percentile": percentiles.loc[pid, metric]}
-                  for pid, name in [(player_id, target_label), (chosen, other_label)] for metric in features]
+    comparison_metrics = list(dict.fromkeys([*COMPARISON_CORE_METRICS, *features]))
+    raw = [{"Metric": metric, target_label: target[metric], other_label: other[metric]}
+           for metric in comparison_metrics]
+    comparison = pd.DataFrame(raw)
+
+    def highlight_higher_stat(row):
+        target_value = comparison.loc[row.name, target_label]
+        other_value = comparison.loc[row.name, other_label]
+        styles = pd.Series("", index=row.index)
+        if pd.notna(target_value) and pd.notna(other_value) and target_value != other_value:
+            higher_column = target_label if target_value > other_value else other_label
+            styles[higher_column] = HIGHER_STAT_HIGHLIGHT
+        return styles
+
+    display_comparison = comparison.astype({target_label: "object", other_label: "object"})
+    for index, metric in enumerate(comparison_metrics):
+        for label in [target_label, other_label]:
+            display_comparison.loc[index, label] = format_stat(comparison.loc[index, label], metric)
+    formatted_comparison = display_comparison.style.apply(highlight_higher_stat, axis=1)
+    st.dataframe(formatted_comparison, hide_index=True, width="stretch")
+    chart_metrics = [metric for metric in comparison_metrics if metric in features]
+    chart_rows = [
+        {"Metric": metric, "Player": name,
+         "Positional percentile": percentiles.loc[pid, metric]}
+        for pid, name in [(player_id, target_label), (chosen, other_label)]
+        for metric in chart_metrics
+    ]
     figure = px.bar(pd.DataFrame(chart_rows), x="Positional percentile", y="Metric", color="Player",
                     barmode="group", orientation="h", range_x=[0, 100],
-                    color_discrete_sequence=["#6f42c1", "#009e89"], height=max(420, len(features) * 65))
+                    category_orders={"Metric": chart_metrics},
+                    color_discrete_sequence=["#6f42c1", "#009e89"], height=max(420, len(chart_metrics) * 65))
     figure.update_layout(legend_title_text="", yaxis_title=None, margin=dict(l=0, r=0, t=15, b=0))
+    figure.update_traces(hovertemplate=(
+        "Player = %{fullData.name}<br>Metric = %{y}<br>Positional percentile = %{x:.1f}<extra></extra>"
+    ))
     st.plotly_chart(figure, use_container_width=True, config=CHART_CONFIG)
     gaps = (percentiles.loc[player_id] - percentiles.loc[chosen]).abs().sort_values()
     st.write("**Closest statistical matches:** " + ", ".join(gaps.head(3).index) + ".")
@@ -216,24 +244,26 @@ def archetype_view(players):
     if results.empty:
         st.info("No players match these filters with complete statistics.")
         return
-    selected = st.selectbox("Explore an archetype player", results["Player ID"].tolist(),
-                            format_func=lambda pid: player_label(players, pid))
-    row = results[results["Player ID"] == selected].iloc[0]
-    st.button("View career and similar players", on_click=navigate, args=("players", selected), type="primary")
     limit = st.slider("Recommendations to show", 5, 30, 10, 5)
     st.dataframe(results[["Player Name", "Club", "Nationality", "Minutes", "Scouting Score"]].head(limit),
                  hide_index=True, width="stretch", column_config={
                      "Scouting Score": st.column_config.ProgressColumn("Archetype score / 100", min_value=0, max_value=100, format="%.1f"),
                  })
+    selected = st.selectbox("Explore an archetype player", results["Player ID"].tolist(),
+                            format_func=lambda pid: player_label(players, pid))
+    row = results[results["Player ID"] == selected].iloc[0]
+    st.button("View career and similar players", on_click=navigate, args=("players", selected), type="primary")
     chart = pd.DataFrame([{"Metric": m, "Percentile": row[f"{m} Percentile"]} for m in metrics])
-    st.plotly_chart(px.bar(chart, x="Percentile", y="Metric", orientation="h", range_x=[0, 100],
-                           title=f"{row['Player Name']} · {role}"), use_container_width=True,
+    figure = px.bar(chart, x="Percentile", y="Metric", orientation="h", range_x=[0, 100],
+                    title=f"{row['Player Name']} · {role}")
+    figure.update_traces(hovertemplate="Metric = %{y}<br>Percentile = %{x:.1f}<extra></extra>")
+    st.plotly_chart(figure, use_container_width=True,
                     config=CHART_CONFIG)
 
 
 def main():
-    st.title("⚽ Premier League Scout")
-    st.caption("Explore a career. Find a similar style.")
+    st.title("⚽ Premier League Scout ⚽️")
+    st.caption("Find players of similar styles with your chosen player.")
     page = st.session_state.get("page", "players")
     nav = st.columns([1, 1, 3])
     nav[0].button("Player Search", on_click=navigate, args=("players",),

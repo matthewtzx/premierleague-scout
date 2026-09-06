@@ -72,6 +72,16 @@ class ScoutingTests(unittest.TestCase):
         matches, _, _, _ = similar_players(rows, "a")
         self.assertNotIn("b", matches["Player ID"].tolist())
 
+    def test_style_metrics_include_goal_contributions_and_defender_recoveries(self):
+        for position in ("DEF", "MID", "FWD"):
+            self.assertIn("Goals per 90", STYLE_METRICS[position])
+            self.assertIn("Assists per 90", STYLE_METRICS[position])
+        self.assertIn("Recoveries per 90", STYLE_METRICS["DEF"])
+        self.assertIn("Touches In Box per 90", STYLE_METRICS["DEF"])
+        for position in ("MID", "FWD"):
+            metrics = STYLE_METRICS[position]
+            self.assertEqual(metrics.index("Key Passes per 90"), metrics.index("Passes per 90") + 1)
+
     def test_roles_have_complete_valid_metrics_and_missing_rows_not_scored(self):
         rows = prepare_players(pd.DataFrame([player("a", "GKP"), player("b", "GKP", level=2)]))
         self.assertEqual(sum(len(roles) for roles in PLAYER_ROLES.values()), 10)

@@ -1,7 +1,7 @@
 """Premier League Scout: current players, career statistics, and archetypes."""
 
-from datetime import datetime, timezone
 import sqlite3
+from datetime import datetime, timezone
 
 import pandas as pd
 import plotly.express as px
@@ -12,7 +12,10 @@ from src.metrics import COUNTING_METRICS, POSITION_NAMES, RATE_METRICS
 from src.pl_api import DataSourceError, PremierLeagueAPI
 from src.roles import PLAYER_ROLES, ROLE_NOTES
 from src.scouting import (
-    available_role_metrics, calculate_role_score, prepare_players, similar_players,
+    available_role_metrics,
+    calculate_role_score,
+    prepare_players,
+    similar_players,
 )
 
 st.set_page_config(page_title="Premier League Scout", page_icon="⚽", layout="wide")
@@ -156,7 +159,8 @@ def comparisons(players, player_id):
                     barmode="group", orientation="h", range_x=[0, 100],
                     category_orders={"Metric": chart_metrics},
                     color_discrete_sequence=["#6f42c1", "#009e89"], height=max(420, len(chart_metrics) * 65))
-    figure.update_layout(legend_title_text="", yaxis_title=None, margin=dict(l=0, r=0, t=15, b=0))
+    figure.update_layout(legend_title_text="", yaxis_title=None,
+                         margin={"l": 0, "r": 0, "t": 15, "b": 0})
     figure.update_traces(hovertemplate=(
         "Player = %{fullData.name}<br>Metric = %{y}<br>Positional percentile = %{x:.1f}<extra></extra>"
     ))
